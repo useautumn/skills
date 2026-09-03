@@ -74,7 +74,7 @@ the visual's form to the subject — a mismatched form reads as slop:
 ┌────────────────┐        ┌────────────────────┐
 │ track request  │  ──►   │ Redis (fast path)  │
 │ value: 100     │        │ balance: 900       │
-└────────────────┘        └─────────┴──────────┘
+└────────────────┘        └─────────┬──────────┘
                                     │ lazy flush (SyncV4)
                                     ▼
                           ┌────────────────────┐
