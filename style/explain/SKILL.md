@@ -74,7 +74,7 @@ the visual's form to the subject — a mismatched form reads as slop:
 ┌────────────────┐        ┌────────────────────┐
 │ track request  │  ──►   │ Redis (fast path)  │
 │ value: 100     │        │ balance: 900       │
-└────────────────┘        └─────────├─────────┘
+└────────────────┘        └─────────┴──────────┘
                                     │ lazy flush (SyncV4)
                                     ▼
                           ┌────────────────────┐
@@ -163,7 +163,7 @@ rules as `-` lines and the new rules as `+` lines — English, not TypeScript.
 + skip customize (edits own that)
 + pin version/slug → that row only
 + no pin → already-on-this-parent, else active
-+ already pointing at pro@v2 ← no-op
++ already pointing at pro@v2 → no-op
 ```
 
 Load-bearing rules only. A 20-line pseudocode diff is a wall of text again.
