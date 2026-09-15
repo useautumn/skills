@@ -17,65 +17,57 @@ A credit system is made up of a list of [features](/documentation/concepts/featu
   Make sure you have some metered features created before creating a credit
   system.
 
-<Tabs>
-<Tab title="CLI">
-
 Define metered features, then create a `credit_system` feature with a `creditSchema` that maps each feature to a credit cost:
 
 ```ts autumn.config.ts
-import { feature, item, plan } from 'atmn';
+import { atmn, feature, plan } from "atmn";
 
 export const basicMessage = feature({
-  id: 'basic_message',
-  name: 'Basic Message',
-  type: 'metered',
+  featureId: "basic_message",
+  name: "Basic Message",
+  type: "metered",
   consumable: true,
 });
 
 export const premiumMessage = feature({
-  id: 'premium_message',
-  name: 'Premium Message',
-  type: 'metered',
+  featureId: "premium_message",
+  name: "Premium Message",
+  type: "metered",
   consumable: true,
 });
 
 export const credits = feature({
-  id: 'credits',
-  name: 'Credits',
-  type: 'credit_system',
+  featureId: "credits",
+  name: "Credits",
+  type: "credit_system",
   creditSchema: [
-    { meteredFeatureId: basicMessage.id, creditCost: 1 },
-    { meteredFeatureId: premiumMessage.id, creditCost: 10 },
+    { meteredFeatureId: basicMessage.featureId, creditCost: 1 },
+    { meteredFeatureId: premiumMessage.featureId, creditCost: 10 },
   ],
 });
 
 export const pro = plan({
-  id: 'pro',
-  name: 'Pro',
-  price: { amount: 20, interval: 'month' },
+  planId: "pro",
+  versionSlug: "v1",
+  active: true,
+  name: "Pro",
+  price: { amount: 20, interval: "month" },
   items: [
-    item({
-      featureId: credits.id,
+    {
+      featureId: credits.featureId,
       included: 200,
-      reset: { interval: 'month' },
-    }),
+      reset: { interval: "month" },
+    },
   ],
+});
+
+export default atmn({
+  features: [basicMessage, premiumMessage, credits],
+  plans: [pro],
 });
 ```
 
-Push changes with `atmn push`.
-
-</Tab>
-<Tab title="Dashboard">
-
-1. Navigate to the features page, under Plans.
-2. Click "Create Credit System"
-4. Add the features that can draw from this credit system.
-5. For each feature, define how many credits each unit of usage should cost (eg, 3 credits per "premium request").
-6. Click "Create"
-
-</Tab>
-</Tabs>
+Preview with `atmn push`, then apply with `atmn push --yes`.
 
 **Example**
 
@@ -133,7 +125,6 @@ curl -X POST "https://api.useautumn.com/v1/check" \
 
 </CodeGroup>
 
-<Expandable title="check response">
 The response will contain the balance for the credit system that is being deducted from.
 
 ```json
@@ -153,7 +144,6 @@ The response will contain the balance for the credit system that is being deduct
 }
 ```
 
-</Expandable>
 In this case, we have a balance of 100 credits remaining, so we're allowed to use our 6 "premium requests" feature.
 
   If a feature is not defined in the credit system, it will return `allowed: false`
@@ -202,7 +192,6 @@ curl -X POST "https://api.useautumn.com/v1/track" \
 
 </CodeGroup>
 
-<Expandable title="track response">
 ```json
 {
   "customerId": "user_123",
@@ -218,7 +207,6 @@ curl -X POST "https://api.useautumn.com/v1/track" \
   }
 }
 ```
-</Expandable>
 
 Since the customer started with a balance of 100 credits, and used 18 credits, their remaining balance is 82 credits.
 
@@ -236,7 +224,7 @@ A graduated row steps the credit cost as usage in the current cycle grows. Tier 
 
 ```ts autumn.config.ts
 {
-  meteredFeatureId: tokens.id,
+  meteredFeatureId: tokens.featureId,
   billingUnits: 1000,
   tierBehavior: 'graduated',
   tiers: [
@@ -263,7 +251,7 @@ await autumn.track({
 
 ```ts autumn.config.ts
 {
-  meteredFeatureId: actions.id,
+  meteredFeatureId: actions.featureId,
   creditCost: 1,
   dimensions: {
     size_large: { match: { size: 'large' }, creditCost: 16 },
@@ -329,16 +317,13 @@ See the credits pricing guide for a more detailed example of setting up a moneta
 
 For AI applications that need to track token usage with per-model pricing, you can create an AI credit system. This lets you define markup percentages for each model and automatically calculate costs based on input/output tokens.
 
-<Tabs>
-<Tab title="CLI">
-
 Markups are optional. `defaultMarkup` applies to every model unless overridden — by `providerMarkups` (keyed by the first segment of the model ID, e.g. `openrouter`), or by `modelMarkups` for a specific model, which takes highest priority. With no markups set, models are billed at their Models.dev base cost.
 
 A markup of `-100` makes the model free: usage events are still recorded, but nothing is deducted from the balance.
 
 ```ts Simplest setup — one markup for everything
 export const aiCredits = feature({
-  id: 'ai_credits',
+  featureId: 'ai_credits',
   name: 'AI Credits',
   type: 'ai_credit_system',
   defaultMarkup: 30, // every model billed at models.dev cost + 30%
@@ -348,12 +333,12 @@ export const aiCredits = feature({
 Or mix the levels for finer control:
 
 ```ts autumn.config.ts
-import { feature, item, plan } from 'atmn';
+import { atmn, feature, plan } from "atmn";
 
 export const aiCredits = feature({
-  id: 'ai_credits',
-  name: 'AI Credits',
-  type: 'ai_credit_system',
+  featureId: "ai_credits",
+  name: "AI Credits",
+  type: "ai_credit_system",
   // Global fallback markup
   defaultMarkup: 30,
   // Per-provider defaults
@@ -362,43 +347,33 @@ export const aiCredits = feature({
   },
   // Per-model overrides (highest priority)
   modelMarkups: {
-    'anthropic/claude-opus-4-5': { markup: 20 },
-    'anthropic/claude-sonnet-4-5': { markup: 15 },
-    'openai/gpt-4o-mini': { markup: -100 }, // free for customers
+    "anthropic/claude-opus-4-5": { markup: 20 },
+    "anthropic/claude-sonnet-4-5": { markup: 15 },
+    "openai/gpt-4o-mini": { markup: -100 }, // free for customers
     // For custom/self-hosted models, specify input/output costs in $/M tokens
-    'custom/my-model': { markup: 25, inputCost: 0.01, outputCost: 0.03 },
+    "custom/my-model": { markup: 25, inputCost: 0.01, outputCost: 0.03 },
   },
 });
 
 export const pro = plan({
-  id: 'pro',
-  name: 'Pro',
-  price: { amount: 50, interval: 'month' },
+  planId: "pro",
+  versionSlug: "v1",
+  active: true,
+  name: "Pro",
+  price: { amount: 50, interval: "month" },
   items: [
-    item({
-      featureId: aiCredits.id,
+    {
+      featureId: aiCredits.featureId,
       included: 10, // $10 worth of AI credits
-      reset: { interval: 'month' },
-    }),
+      reset: { interval: "month" },
+    },
   ],
 });
+
+export default atmn({ features: [aiCredits], plans: [pro] });
 ```
 
-Push changes with `atmn push`.
-
-</Tab>
-<Tab title="Dashboard">
-
-1. Navigate to the features page, under Plans.
-2. Click "Create Credit System"
-3. Toggle "AI Credit System" to enable model-based pricing
-4. Set a default markup %, and optionally add providers with their own default markups
-5. Add the models you want to support, overriding the markup per model where needed
-6. For custom models, also specify input/output costs per million tokens
-7. Click "Create"
-
-</Tab>
-</Tabs>
+Preview with `atmn push`, then apply with `atmn push --yes`.
 
 ### Model ID Format
 
